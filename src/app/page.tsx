@@ -4,12 +4,36 @@ import Navigation from '@/components/Navigation';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Blog } from '@/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import BlogCard from '@/components/BlogCard';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function HomePage() {
+// Loading component
+function LoadingUI() {
+  return (
+    <div>
+      <Navigation />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-lg shadow-sm p-4">
+                <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main content component
+function HomeContent() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
   const [allTags, setAllTags] = useState<string[]>([]);
@@ -51,25 +75,7 @@ export default function HomePage() {
   }, [tag]);
 
   if (loading) {
-    return (
-      <div>
-        <Navigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-white rounded-lg shadow-sm p-4">
-                  <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingUI />;
   }
 
   return (
@@ -139,5 +145,14 @@ export default function HomePage() {
         )}
       </main>
     </div>
+  );
+}
+
+// Main page component with Suspense
+export default function HomePage() {
+  return (
+    <Suspense fallback={<LoadingUI />}>
+      <HomeContent />
+    </Suspense>
   );
 }
