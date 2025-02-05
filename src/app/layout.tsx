@@ -20,9 +20,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <AuthProvider>
-          <main className="min-h-screen bg-gray-50 pt-16">
-            {children}
-          </main>
+          {children}
           <Toaster />
         </AuthProvider>
       </body>

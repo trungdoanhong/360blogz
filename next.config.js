@@ -4,24 +4,13 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  basePath: '/360blogz',
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
   },
-  trailingSlash: true,
-  // Handle dynamic routes
-  async rewrites() {
-    return [
-      {
-        source: '/',
-        destination: '/?tag=:tag',
-        has: [{ type: 'query', key: 'tag' }],
-      },
-    ];
-  }
+  trailingSlash: true
 }
 
 module.exports = nextConfig 

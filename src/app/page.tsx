@@ -1,7 +1,7 @@
 'use client';
 
 import Navigation from '@/components/Navigation';
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Blog } from '@/types';
 import { useEffect, useState } from 'react';
@@ -9,7 +9,7 @@ import BlogCard from '@/components/BlogCard';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function Home() {
+export default function HomePage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
   const [allTags, setAllTags] = useState<string[]>([]);
@@ -20,25 +20,19 @@ export default function Home() {
     async function fetchBlogs() {
       try {
         const blogsRef = collection(db, 'blogs');
-        let q;
-        
-        if (tag) {
-          q = query(
-            blogsRef,
-            where('tags', 'array-contains', tag),
-            orderBy('createdAt', 'desc')
-          );
-        } else {
-          q = query(blogsRef, orderBy('createdAt', 'desc'));
-        }
-        
+        let q = query(blogsRef, orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
         const blogsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Blog[];
 
-        setBlogs(blogsData);
+        // Filter blogs by tag if tag is present
+        const filteredBlogs = tag 
+          ? blogsData.filter(blog => blog.tags?.includes(tag))
+          : blogsData;
+
+        setBlogs(filteredBlogs);
 
         // Collect all unique tags
         const tags = new Set<string>();
