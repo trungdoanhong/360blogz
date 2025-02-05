@@ -1,6 +1,8 @@
 import EditBlogClient from '@/components/EditBlogClient'
 
-export const dynamic = 'force-dynamic'
+export const generateStaticParams = async () => {
+  return []
+}
 
 export default function EditBlog() {
   return <EditBlogClient />

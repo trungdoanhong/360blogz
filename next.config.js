@@ -11,7 +11,12 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  trailingSlash: true
+  trailingSlash: true,
+  // Generate a 404 page that will be used for all dynamic routes
+  experimental: {
+    appDir: true,
+    fallback: true
+  }
 }
 
 module.exports = nextConfig 

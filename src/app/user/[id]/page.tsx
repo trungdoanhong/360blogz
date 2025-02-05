@@ -1,6 +1,8 @@
 import UserProfileClient from '@/components/UserProfileClient'
 
-export const dynamic = 'force-dynamic'
+export const generateStaticParams = async () => {
+  return []
+}
 
 export default function UserProfile() {
   return <UserProfileClient />
