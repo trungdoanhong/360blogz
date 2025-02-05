@@ -10,6 +10,17 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
+  },
+  trailingSlash: true,
+  // Disable dynamic routes for static export
+  exportPathMap: async function () {
+    return {
+      '/': { page: '/' },
+      '/login': { page: '/login' },
+      '/signup': { page: '/signup' },
+      '/profile': { page: '/profile' },
+      '/new-blog': { page: '/new-blog' },
+    }
   }
 }
 
