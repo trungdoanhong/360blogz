@@ -19,6 +19,10 @@ interface UserProfile {
   following?: string[];
 }
 
+export async function generateStaticParams() {
+  return [] // Return empty array for static build
+}
+
 export default function UserProfile() {
   const { id } = useParams();
   const { user: currentUser } = useAuth();

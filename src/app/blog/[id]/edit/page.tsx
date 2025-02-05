@@ -12,6 +12,10 @@ import { Blog } from '@/types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+export async function generateStaticParams() {
+  return [] // Return empty array for static build
+}
+
 export default function EditBlog() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');

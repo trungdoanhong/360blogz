@@ -12,6 +12,10 @@ import toast from 'react-hot-toast';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
 
+export async function generateStaticParams() {
+  return [] // Return empty array for static build
+}
+
 export default function BlogDetail() {
   const { id } = useParams();
   const [blog, setBlog] = useState<Blog | null>(null);
