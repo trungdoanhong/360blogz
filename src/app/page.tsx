@@ -6,13 +6,16 @@ import { db } from '@/lib/firebase';
 import { Blog } from '@/types';
 import { useEffect, useState } from 'react';
 import BlogCard from '@/components/BlogCard';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function Home() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [allTags, setAllTags] = useState<string[]>([]);
   const searchParams = useSearchParams();
   const tag = searchParams.get('tag');
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchBlogs() {
@@ -37,6 +40,13 @@ export default function Home() {
         })) as Blog[];
 
         setBlogs(blogsData);
+
+        // Collect all unique tags
+        const tags = new Set<string>();
+        blogsData.forEach(blog => {
+          blog.tags?.forEach(tag => tags.add(tag));
+        });
+        setAllTags(Array.from(tags));
       } catch (error) {
         console.error('Error fetching blogs:', error);
       } finally {
@@ -62,13 +72,41 @@ export default function Home() {
     <div>
       <Navigation />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {tag && (
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Posts tagged with #{tag}
-            </h1>
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            {tag ? (
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  Posts tagged with #{tag}
+                </h1>
+                <Link 
+                  href="/"
+                  className="text-indigo-600 hover:text-indigo-500"
+                >
+                  ← Back to all posts
+                </Link>
+              </div>
+            ) : (
+              <h1 className="text-3xl font-bold text-gray-900">
+                All Posts
+              </h1>
+            )}
           </div>
-        )}
+          
+          {!tag && allTags.length > 0 && (
+            <div className="flex flex-wrap gap-2 justify-end">
+              {allTags.map((t) => (
+                <Link
+                  key={t}
+                  href={`/?tag=${t}`}
+                  className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm hover:bg-gray-200 transition-colors"
+                >
+                  #{t}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
         
         {blogs.length > 0 ? (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -82,7 +120,16 @@ export default function Home() {
               {tag ? `No posts found with tag #${tag}` : 'No posts found'}
             </h2>
             <p className="mt-2 text-gray-600">
-              {tag ? 'Try searching for a different tag' : 'Check back later for new posts'}
+              {tag ? (
+                <>
+                  Try searching for a different tag or{' '}
+                  <Link href="/" className="text-indigo-600 hover:underline">
+                    view all posts
+                  </Link>
+                </>
+              ) : (
+                'Check back later for new posts'
+              )}
             </p>
           </div>
         )}
