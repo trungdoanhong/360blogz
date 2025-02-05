@@ -6,15 +6,12 @@ import { db } from '@/lib/firebase';
 import { Blog } from '@/types';
 import { useEffect, useState } from 'react';
 import BlogCard from '@/components/BlogCard';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 
 export default function Home() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
   const [allTags, setAllTags] = useState<string[]>([]);
-  const searchParams = useSearchParams();
-  const tag = searchParams?.get('tag');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchBlogs() {
@@ -22,10 +19,10 @@ export default function Home() {
         const blogsRef = collection(db, 'blogs');
         let q;
         
-        if (tag) {
+        if (selectedTag) {
           q = query(
             blogsRef,
-            where('tags', 'array-contains', tag),
+            where('tags', 'array-contains', selectedTag),
             orderBy('createdAt', 'desc')
           );
         } else {
@@ -54,7 +51,7 @@ export default function Home() {
     }
 
     fetchBlogs();
-  }, [tag]);
+  }, [selectedTag]);
 
   if (loading) {
     return (
@@ -84,17 +81,17 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
           <div>
-            {tag ? (
+            {selectedTag ? (
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Posts tagged with #{tag}
+                  Posts tagged with #{selectedTag}
                 </h1>
-                <Link 
-                  href="/"
+                <button 
+                  onClick={() => setSelectedTag(null)}
                   className="text-indigo-600 hover:text-indigo-500"
                 >
                   ← Back to all posts
-                </Link>
+                </button>
               </div>
             ) : (
               <h1 className="text-3xl font-bold text-gray-900">
@@ -103,16 +100,16 @@ export default function Home() {
             )}
           </div>
           
-          {!tag && allTags.length > 0 && (
+          {!selectedTag && allTags.length > 0 && (
             <div className="flex flex-wrap gap-2 justify-end">
-              {allTags.map((t) => (
-                <Link
-                  key={t}
-                  href={`/?tag=${t}`}
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedTag(tag)}
                   className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm hover:bg-gray-200 transition-colors"
                 >
-                  #{t}
-                </Link>
+                  #{tag}
+                </button>
               ))}
             </div>
           )}
@@ -127,15 +124,18 @@ export default function Home() {
         ) : (
           <div className="text-center py-12">
             <h2 className="text-2xl font-semibold text-gray-900">
-              {tag ? `No posts found with tag #${tag}` : 'No posts found'}
+              {selectedTag ? `No posts found with tag #${selectedTag}` : 'No posts found'}
             </h2>
             <p className="mt-2 text-gray-600">
-              {tag ? (
+              {selectedTag ? (
                 <>
                   Try searching for a different tag or{' '}
-                  <Link href="/" className="text-indigo-600 hover:underline">
+                  <button 
+                    onClick={() => setSelectedTag(null)}
+                    className="text-indigo-600 hover:underline"
+                  >
                     view all posts
-                  </Link>
+                  </button>
                 </>
               ) : (
                 'Check back later for new posts'
