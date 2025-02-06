@@ -1,7 +1,7 @@
 'use client';
 
 import Navigation from '@/components/Navigation';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Blog } from '@/types';
 import { useEffect, useState, Suspense } from 'react';
@@ -12,9 +12,9 @@ import Link from 'next/link';
 // Loading component
 function LoadingUI() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       <Navigation />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -44,26 +44,36 @@ function HomeContent() {
     async function fetchBlogs() {
       try {
         const blogsRef = collection(db, 'blogs');
-        let q = query(blogsRef, orderBy('createdAt', 'desc'));
+        let q;
+        
+        if (tag) {
+          q = query(
+            blogsRef,
+            where('tags', 'array-contains', tag),
+            orderBy('createdAt', 'desc')
+          );
+        } else {
+          q = query(blogsRef, orderBy('createdAt', 'desc'));
+        }
+
         const querySnapshot = await getDocs(q);
         const blogsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Blog[];
 
-        // Filter blogs by tag if tag is present
-        const filteredBlogs = tag 
-          ? blogsData.filter(blog => blog.tags?.includes(tag))
-          : blogsData;
+        setBlogs(blogsData);
 
-        setBlogs(filteredBlogs);
-
-        // Collect all unique tags
-        const tags = new Set<string>();
-        blogsData.forEach(blog => {
-          blog.tags?.forEach(tag => tags.add(tag));
-        });
-        setAllTags(Array.from(tags));
+        // Fetch all tags in a separate query if needed
+        if (!tag) {
+          const allBlogsSnapshot = await getDocs(query(blogsRef));
+          const tags = new Set<string>();
+          allBlogsSnapshot.docs.forEach(doc => {
+            const blogData = doc.data();
+            blogData.tags?.forEach((tag: string) => tags.add(tag));
+          });
+          setAllTags(Array.from(tags));
+        }
       } catch (error) {
         console.error('Error fetching blogs:', error);
       } finally {
@@ -79,9 +89,9 @@ function HomeContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       <Navigation />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-20">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
           <div>
             {tag ? (
