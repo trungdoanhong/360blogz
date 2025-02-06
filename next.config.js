@@ -11,8 +11,10 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   trailingSlash: true,
-  basePath: '/360blogz',
-  assetPrefix: '/360blogz'
+  ...(process.env.NODE_ENV === 'production' ? {
+    basePath: '/360blogz',
+    assetPrefix: '/360blogz'
+  } : {})
 }
 
 module.exports = nextConfig 
