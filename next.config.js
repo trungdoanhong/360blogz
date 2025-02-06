@@ -10,7 +10,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  trailingSlash: true
+  trailingSlash: true,
+  basePath: '/360blogz',
+  assetPrefix: '/360blogz'
 }
 
 module.exports = nextConfig 
