@@ -1,31 +1,33 @@
 'use client';
 
 import Navigation from '@/components/Navigation';
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { Blog } from '@/types';
+// Removed unused Firestore imports - now handled by services
+import { Blog, PaginatedResult } from '@/types';
 import { useEffect, useState, Suspense } from 'react';
 import BlogCard from '@/components/BlogCard';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { fetchBlogsWithPagination, searchBlogs, getFeaturedBlogs } from '@/utils/blogService';
+import { getTagsForFilter } from '@/utils/tagService';
+import Pagination from '@/components/Pagination';
+import { BlogCardSkeleton } from '@/components/LoadingSpinner';
+import toast from 'react-hot-toast';
 
 // Loading component
 function LoadingUI() {
   return (
     <div>
       <Navigation />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow-sm p-4">
-                <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-                <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              </div>
+              <BlogCardSkeleton key={i} />
             ))}
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -34,132 +36,243 @@ function LoadingUI() {
 
 // Main content component
 function HomeContent() {
-  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [paginatedResult, setPaginatedResult] = useState<PaginatedResult<Blog> | null>(null);
+  const [featuredBlogs, setFeaturedBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
   const [allTags, setAllTags] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const searchParams = useSearchParams();
   const tag = searchParams?.get('tag');
+  const search = searchParams?.get('search');
 
   useEffect(() => {
-    async function fetchBlogs() {
+    async function fetchData() {
       try {
-        const blogsRef = collection(db, 'blogs');
-        let q;
+        setLoading(true);
         
-        if (tag) {
-          q = query(
-            blogsRef,
-            where('tags', 'array-contains', tag),
-            orderBy('createdAt', 'desc')
-          );
+        // Fetch featured blogs for homepage
+        if (!tag && !search && currentPage === 1) {
+          try {
+            const featured = await getFeaturedBlogs(3);
+            setFeaturedBlogs(featured);
+          } catch (error) {
+            console.error('Error fetching featured blogs:', error);
+          }
+        }
+        
+        let result: PaginatedResult<Blog>;
+        
+        if (search) {
+          // Search blogs
+          result = await searchBlogs(search, currentPage);
         } else {
-          q = query(blogsRef, orderBy('createdAt', 'desc'));
+          // Fetch with filters
+          const filters = {
+            published: true,
+            ...(tag && { tags: [tag] })
+          };
+          result = await fetchBlogsWithPagination(currentPage, filters);
         }
-
-        const querySnapshot = await getDocs(q);
-        const blogsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Blog[];
-
-        setBlogs(blogsData);
-
-        // Fetch all tags in a separate query if needed
-        if (!tag) {
-          const allBlogsSnapshot = await getDocs(query(blogsRef));
-          const tags = new Set<string>();
-          allBlogsSnapshot.docs.forEach(doc => {
-            const blogData = doc.data();
-            blogData.tags?.forEach((tag: string) => tags.add(tag));
-          });
-          setAllTags(Array.from(tags));
+        
+        setPaginatedResult(result);
+        
+        // Fetch tags efficiently
+        if (currentPage === 1 && !search) {
+          try {
+            const tags = await getTagsForFilter(tag || undefined);
+            setAllTags(tags);
+          } catch (error) {
+            console.error('Error fetching tags:', error);
+          }
         }
+        
       } catch (error) {
-        console.error('Error fetching blogs:', error);
+        console.error('Error fetching data:', error);
+        
+        // More specific error handling
+        let errorMessage = 'Failed to load blogs. Please try again.';
+        if (error instanceof Error) {
+          if (error.message.includes('network')) {
+            errorMessage = 'Network error. Please check your connection.';
+          } else if (error.message.includes('permission')) {
+            errorMessage = 'Permission denied. Please try logging in again.';
+          }
+        }
+        
+        toast.error(errorMessage);
+        setPaginatedResult({
+          data: [],
+          pagination: {
+            currentPage: 1,
+            totalPages: 0,
+            totalItems: 0,
+            hasNextPage: false,
+            hasPreviousPage: false
+          }
+        });
       } finally {
         setLoading(false);
       }
     }
 
-    fetchBlogs();
-  }, [tag]);
+    fetchData();
+  }, [tag, search, currentPage]);
 
-  if (loading) {
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [tag, search]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (loading && !paginatedResult) {
     return <LoadingUI />;
   }
 
   return (
     <div>
       <Navigation />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
-          <div>
-            {tag ? (
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Posts tagged with #{tag}
-                </h1>
-                <Link 
-                  href="/"
-                  className="text-indigo-600 hover:text-indigo-500"
-                >
-                  ← Back to all posts
-                </Link>
-              </div>
-            ) : (
-              <h1 className="text-3xl font-bold text-gray-900">
-                All Posts
-              </h1>
-            )}
-          </div>
+      {/* Add padding-top to account for fixed navigation */}
+      <div className="pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 leading-tight">
+            {search ? `Search results for "${search}"` : 
+             tag ? `Posts tagged "${tag}"` : 'Latest Blog Posts'}
+          </h1>
           
-          {!tag && allTags.length > 0 && (
-            <div className="flex flex-wrap gap-2 justify-end">
-              {allTags.map((t) => (
+          {/* Tag filter */}
+          {!search && (
+            <div className="flex flex-wrap gap-2 mb-8">
+              <Link
+                href="/"
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  !tag 
+                    ? 'bg-indigo-600 text-white' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                All
+              </Link>
+              {allTags.slice(0, 10).map((tagName) => (
                 <Link
-                  key={t}
-                  href={`/?tag=${t}`}
-                  className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm hover:bg-gray-200 transition-colors"
+                  key={tagName}
+                  href={`/?tag=${encodeURIComponent(tagName)}`}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                    tag === tagName
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
                 >
-                  #{t}
+                  {tagName}
                 </Link>
               ))}
+              {allTags.length > 10 && (
+                <span className="px-3 py-1 text-sm text-gray-500">
+                  +{allTags.length - 10} more
+                </span>
+              )}
             </div>
           )}
-        </div>
-        
-        {blogs.length > 0 ? (
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {blogs.map((blog) => (
-              <BlogCard key={blog.id} blog={blog} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-semibold text-gray-900">
-              {tag ? `No posts found with tag #${tag}` : 'No posts found'}
-            </h2>
-            <p className="mt-2 text-gray-600">
-              {tag ? (
-                <>
-                  Try searching for a different tag or{' '}
-                  <Link href="/" className="text-indigo-600 hover:underline">
-                    view all posts
-                  </Link>
-                </>
-              ) : (
-                'Check back later for new posts'
-              )}
+          
+          {/* Results info */}
+          {paginatedResult && (
+            <p className="text-gray-600 text-sm mb-4">
+              {paginatedResult.pagination.totalItems === 0 
+                ? 'No posts found' 
+                : `Showing ${paginatedResult.data.length} of ${paginatedResult.pagination.totalItems} posts`
+              }
             </p>
+          )}
+        </div>
+
+        {/* Featured blogs section */}
+        {featuredBlogs.length > 0 && !tag && !search && currentPage === 1 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Featured Posts</h2>
+            <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {featuredBlogs.map((blog) => (
+                <div key={blog.id} className="relative">
+                  <BlogCard blog={blog} />
+                  <div className="absolute top-2 right-2 z-10">
+                    <span className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 text-xs font-semibold rounded-full shadow-lg">
+                      ⭐ Featured
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-gray-200 mt-8"></div>
           </div>
         )}
-      </main>
+        
+        {/* Loading state */}
+        {loading && (
+          <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {[...Array(8)].map((_, i) => (
+              <BlogCardSkeleton key={i} />
+            ))}
+          </div>
+        )}
+        
+        {/* Main blog list */}
+        {!loading && paginatedResult && (
+          <>
+            {paginatedResult.data.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="max-w-md mx-auto">
+                  <div className="text-gray-400 mb-4">
+                    <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {search ? 'No search results' : tag ? 'No posts with this tag' : 'No blog posts yet'}
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    {search ? 'Try a different search term' : 
+                     tag ? 'Try browsing other tags' : 
+                     'Be the first to share your thoughts!'}
+                  </p>
+                  {!search && !tag && (
+                    <Link 
+                      href="/new-blog" 
+                      className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+                    >
+                      Write the first post
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+                  {paginatedResult.data.map((blog) => (
+                    <BlogCard key={blog.id} blog={blog} />
+                  ))}
+                </div>
+                
+                {/* Pagination */}
+                <Pagination
+                  currentPage={paginatedResult.pagination.currentPage}
+                  totalPages={paginatedResult.pagination.totalPages}
+                  onPageChange={handlePageChange}
+                  className="mt-12"
+                />
+              </>
+            )}
+          </>
+        )}
+        </div>
+      </div>
     </div>
   );
 }
 
-// Main page component with Suspense
-export default function HomePage() {
+export default function Home() {
   return (
     <Suspense fallback={<LoadingUI />}>
       <HomeContent />

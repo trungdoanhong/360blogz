@@ -18,7 +18,7 @@ export default function Login() {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success('Successfully logged in!');
       router.push('/');
-    } catch (error) {
+    } catch {
       toast.error('Failed to login. Please check your credentials.');
     }
   };
@@ -29,7 +29,7 @@ export default function Login() {
       await signInWithPopup(auth, provider);
       toast.success('Successfully logged in with Google!');
       router.push('/');
-    } catch (error) {
+    } catch {
       toast.error('Failed to login with Google.');
     }
   };

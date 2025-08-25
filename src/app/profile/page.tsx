@@ -53,7 +53,7 @@ export default function Profile() {
 
       toast.success('Profile updated successfully!');
       setIsEditing(false);
-    } catch (error) {
+          } catch {
       toast.error('Failed to update profile. Please try again.');
     }
   };
@@ -62,8 +62,10 @@ export default function Profile() {
     return (
       <div>
         <Navigation />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <p>Please login to view your profile.</p>
+        <div className="pt-16">
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <p>Please login to view your profile.</p>
+          </div>
         </div>
       </div>
     );
@@ -72,7 +74,8 @@ export default function Profile() {
   return (
     <div>
       <Navigation />
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="pt-16">
+        <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white shadow rounded-lg p-6 mb-8">
           {isEditing ? (
             <form onSubmit={handleUpdateProfile} className="space-y-4">
@@ -148,6 +151,7 @@ export default function Profile() {
           {blogs.length === 0 && (
             <p className="text-gray-600">You haven't created any blog posts yet.</p>
           )}
+        </div>
         </div>
       </div>
     </div>

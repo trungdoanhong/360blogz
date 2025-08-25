@@ -90,7 +90,7 @@ export default function BlogDetailClient() {
 
       setNewComment('');
       toast.success('Comment added successfully!');
-    } catch (error) {
+          } catch {
       toast.error('Failed to add comment. Please try again.');
     }
   };
@@ -99,8 +99,10 @@ export default function BlogDetailClient() {
     return (
       <div>
         <Navigation />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <p>Loading...</p>
+        <div className="pt-16">
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <p>Loading...</p>
+          </div>
         </div>
       </div>
     );
@@ -109,7 +111,8 @@ export default function BlogDetailClient() {
   return (
     <div>
       <Navigation />
-      <article className="max-w-4xl mx-auto px-4 py-8">
+      <div className="pt-16">
+        <article className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex justify-between items-start mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-4">{blog.title}</h1>
@@ -219,7 +222,8 @@ export default function BlogDetailClient() {
             ))}
           </div>
         </div>
-      </article>
+        </article>
+      </div>
     </div>
   );
 } 

@@ -114,8 +114,10 @@ export default function UserProfileClient() {
     return (
       <div>
         <Navigation />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <p>Loading...</p>
+        <div className="pt-16">
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <p>Loading...</p>
+          </div>
         </div>
       </div>
     );
@@ -125,8 +127,10 @@ export default function UserProfileClient() {
     return (
       <div>
         <Navigation />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <p>User not found</p>
+        <div className="pt-16">
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <p>User not found</p>
+          </div>
         </div>
       </div>
     );
@@ -135,7 +139,8 @@ export default function UserProfileClient() {
   return (
     <div>
       <Navigation />
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="pt-16">
+        <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex items-center space-x-4">
             {user.profilePic && (
@@ -168,6 +173,7 @@ export default function UserProfileClient() {
         ) : (
           <p className="text-gray-600">No posts yet</p>
         )}
+        </div>
       </div>
     </div>
   );

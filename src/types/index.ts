@@ -24,6 +24,10 @@ export interface Blog {
   tags: string[];
   image?: string;
   published?: boolean;
+  viewCount?: number;
+  likes?: string[]; // Array of user IDs who liked
+  likeCount?: number;
+  featured?: boolean;
 }
 
 export interface Comment {
@@ -47,4 +51,22 @@ export interface Notification {
   blogId?: string;
   read: boolean;
   createdAt: string;
+}
+
+export interface PaginationOptions {
+  page: number;
+  limit: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 } 

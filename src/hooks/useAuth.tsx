@@ -31,7 +31,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (userDoc.exists()) {
           // If user exists in Firestore, use that data
-          setUser({ id: userDoc.id, ...userDoc.data() } as User);
+          const userData = userDoc.data() as User;
+          setUser({ ...userData, id: userDoc.id });
         } else {
           // If user doesn't exist in Firestore, create new user
           const newUser: User = {

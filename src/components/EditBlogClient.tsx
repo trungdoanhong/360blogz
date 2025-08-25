@@ -11,6 +11,10 @@ import MarkdownToolbar from '@/components/MarkdownToolbar';
 import { Blog } from '@/types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+// Import validation utilities (will be used in future updates)
+// import { validateBlogData, sanitizeContent } from '@/utils/validation';
+// import { checkBlogOwnership, AuthorizationError } from '@/utils/authorization';
+// import { resizeImage, validateImageFile, generateImagePreview } from '@/utils/imageUtils';
 
 export default function EditBlogClient() {
   const [title, setTitle] = useState('');
@@ -105,7 +109,7 @@ export default function EditBlogClient() {
 
       toast.success('Blog post updated successfully!');
       router.push(`/blog/${id}`);
-    } catch (error) {
+            } catch {
       toast.error('Failed to update blog post. Please try again.');
     } finally {
       setLoading(false);
@@ -116,8 +120,10 @@ export default function EditBlogClient() {
     return (
       <div>
         <Navigation />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <p>Please login to edit this post.</p>
+        <div className="pt-16">
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <p>Please login to edit this post.</p>
+          </div>
         </div>
       </div>
     );
@@ -126,7 +132,8 @@ export default function EditBlogClient() {
   return (
     <div>
       <Navigation />
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="pt-16">
+        <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">Edit Blog Post</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -233,6 +240,7 @@ export default function EditBlogClient() {
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

@@ -14,14 +14,14 @@ export default function SignUp() {
   const [password, setPassword] = useState('');
   const router = useRouter();
 
-  const createUserDocument = async (userId: string, userData: any) => {
+  const createUserDocument = async (userId: string, userData: Record<string, unknown>) => {
     try {
       await setDoc(doc(db, 'users', userId), {
         ...userData,
         createdAt: new Date(),
       });
-    } catch (error) {
-      console.error('Error creating user document:', error);
+    } catch (_error) {
+      console.error('Error creating user document:', _error);
     }
   };
 
@@ -40,7 +40,7 @@ export default function SignUp() {
 
       toast.success('Account created successfully!');
       router.push('/');
-    } catch (error) {
+    } catch {
       toast.error('Failed to create account. Please try again.');
     }
   };
@@ -59,7 +59,7 @@ export default function SignUp() {
 
       toast.success('Account created successfully with Google!');
       router.push('/');
-    } catch (error) {
+    } catch {
       toast.error('Failed to create account with Google.');
     }
   };
